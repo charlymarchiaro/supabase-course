@@ -10,18 +10,18 @@ interface Task {
   image_url: string;
 }
 
-function TaskManager({ session }: { session: Session }) {
-  const [newTask, setNewTask] = useState({ title: "", description: "" });
+function TaskManager({session}: { session: Session }) {
+  const [newTask, setNewTask] = useState({title: "", description: ""});
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newDescription, setNewDescription] = useState("");
 
   const [taskImage, setTaskImage] = useState<File | null>(null);
 
   const fetchTasks = async () => {
-    const { error, data } = await supabase
+    const {error, data} = await supabase
       .from("tasks")
       .select("*")
-      .order("created_at", { ascending: true });
+      .order("created_at", {ascending: true});
 
     if (error) {
       console.error("Error reading task: ", error.message);
@@ -32,7 +32,7 @@ function TaskManager({ session }: { session: Session }) {
   };
 
   const deleteTask = async (id: number) => {
-    const { error } = await supabase.from("tasks").delete().eq("id", id);
+    const {error} = await supabase.from("tasks").delete().eq("id", id);
 
     if (error) {
       console.error("Error deleting task: ", error.message);
@@ -41,9 +41,9 @@ function TaskManager({ session }: { session: Session }) {
   };
 
   const updateTask = async (id: number) => {
-    const { error } = await supabase
+    const {error} = await supabase
       .from("tasks")
-      .update({ description: newDescription })
+      .update({description: newDescription})
       .eq("id", id);
 
     if (error) {
@@ -55,7 +55,7 @@ function TaskManager({ session }: { session: Session }) {
   const uploadImage = async (file: File): Promise<string | null> => {
     const filePath = `${file.name}-${Date.now()}`;
 
-    const { error } = await supabase.storage
+    const {error} = await supabase.storage
       .from("tasks-images")
       .upload(filePath, file);
 
@@ -64,7 +64,7 @@ function TaskManager({ session }: { session: Session }) {
       return null;
     }
 
-    const { data } = await supabase.storage
+    const {data} = await supabase.storage
       .from("tasks-images")
       .getPublicUrl(filePath);
 
@@ -79,9 +79,9 @@ function TaskManager({ session }: { session: Session }) {
       imageUrl = await uploadImage(taskImage);
     }
 
-    const { error } = await supabase
+    const {error} = await supabase
       .from("tasks")
-      .insert({ ...newTask, email: session.user.email, image_url: imageUrl })
+      .insert({...newTask, email: session.user.email, image_url: imageUrl})
       .select()
       .single();
 
@@ -90,7 +90,7 @@ function TaskManager({ session }: { session: Session }) {
       return;
     }
 
-    setNewTask({ title: "", description: "" });
+    setNewTask({title: "", description: ""});
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -108,10 +108,30 @@ function TaskManager({ session }: { session: Session }) {
     channel
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "tasks" },
+        {event: "INSERT", schema: "public", table: "tasks"},
         (payload) => {
           const newTask = payload.new as Task;
           setTasks((prev) => [...prev, newTask]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        {event: "UPDATE", schema: "public", table: "tasks"},
+        (payload) => {
+          const updatedTask = payload.new as Task;
+          setTasks((prev) => prev.map(
+            task => task.id === updatedTask.id ? updatedTask : task)
+          )
+        }
+      )
+      .on(
+        "postgres_changes",
+        {event: "DELETE", schema: "public", table: "tasks"},
+        (payload) => {
+          const deletedTask = payload.old as Task;
+          setTasks((prev) => prev.filter(
+            task => task.id !== deletedTask.id)
+          )
         }
       )
       .subscribe((status) => {
@@ -122,36 +142,36 @@ function TaskManager({ session }: { session: Session }) {
   console.log(tasks);
 
   return (
-    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1rem" }}>
+    <div style={{maxWidth: "600px", margin: "0 auto", padding: "1rem"}}>
       <h2>Task Manager CRUD</h2>
 
       {/* Form to add a new task */}
-      <form onSubmit={handleSubmit} style={{ marginBottom: "1rem" }}>
+      <form onSubmit={handleSubmit} style={{marginBottom: "1rem"}}>
         <input
           type="text"
           placeholder="Task Title"
           onChange={(e) =>
-            setNewTask((prev) => ({ ...prev, title: e.target.value }))
+            setNewTask((prev) => ({...prev, title: e.target.value}))
           }
-          style={{ width: "100%", marginBottom: "0.5rem", padding: "0.5rem" }}
+          style={{width: "100%", marginBottom: "0.5rem", padding: "0.5rem"}}
         />
         <textarea
           placeholder="Task Description"
           onChange={(e) =>
-            setNewTask((prev) => ({ ...prev, description: e.target.value }))
+            setNewTask((prev) => ({...prev, description: e.target.value}))
           }
-          style={{ width: "100%", marginBottom: "0.5rem", padding: "0.5rem" }}
+          style={{width: "100%", marginBottom: "0.5rem", padding: "0.5rem"}}
         />
 
-        <input type="file" accept="image/*" onChange={handleFileChange} />
+        <input type="file" accept="image/*" onChange={handleFileChange}/>
 
-        <button type="submit" style={{ padding: "0.5rem 1rem" }}>
+        <button type="submit" style={{padding: "0.5rem 1rem"}}>
           Add Task
         </button>
       </form>
 
       {/* List of Tasks */}
-      <ul style={{ listStyle: "none", padding: 0 }}>
+      <ul style={{listStyle: "none", padding: 0}}>
         {tasks.map((task, key) => (
           <li
             key={key}
@@ -165,20 +185,20 @@ function TaskManager({ session }: { session: Session }) {
             <div>
               <h3>{task.title}</h3>
               <p>{task.description}</p>
-              <img src={task.image_url} style={{ height: 70 }} />
+              <img src={task.image_url} style={{height: 70}}/>
               <div>
                 <textarea
                   placeholder="Updated description..."
                   onChange={(e) => setNewDescription(e.target.value)}
                 />
                 <button
-                  style={{ padding: "0.5rem 1rem", marginRight: "0.5rem" }}
+                  style={{padding: "0.5rem 1rem", marginRight: "0.5rem"}}
                   onClick={() => updateTask(task.id)}
                 >
                   Edit
                 </button>
                 <button
-                  style={{ padding: "0.5rem 1rem" }}
+                  style={{padding: "0.5rem 1rem"}}
                   onClick={() => deleteTask(task.id)}
                 >
                   Delete

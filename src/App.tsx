@@ -16,7 +16,7 @@ function App() {
   useEffect(() => {
     fetchSession();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(
+    const {data: authListener} = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
       }
@@ -36,10 +36,10 @@ function App() {
       {session ? (
         <>
           <button onClick={logout}> Log Out</button>
-          <TaskManager session={session} />
+          <TaskManager session={session}/>
         </>
       ) : (
-        <Auth />
+        <Auth/>
       )}
     </>
   );
